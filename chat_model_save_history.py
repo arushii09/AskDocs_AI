@@ -1,30 +1,37 @@
 from dotenv import load_dotenv
-from google.cloud import firestore
-from langchain_google_firestore import FirestoreChatMessageHistory
 from langchain_groq import ChatGroq
+from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 load_dotenv()
 
-PROJECT_ID= "pdf-chatbot-d610e"
-SESSION_ID = "user_session_new"  
-COLLECTION_NAME = "chat_history"
+# Initialize Groq model (make sure GROQ_API_KEY is in your .env)
+model = ChatGroq(model="llama-3.3-70b-versatile")
 
-# Initialize Firestore Client
-print("Initializing Firestore Client...")
-client = firestore.Client(project=PROJECT_ID)
+# In-memory chat history store
+store = {}
 
-# Initialize Firestore Chat Message History
-print("Initializing Firestore Chat Message History...")
-chat_history = FirestoreChatMessageHistory(
-    session_id=SESSION_ID,
-    collection=COLLECTION_NAME,
-    client=client,
+def get_session_history(session_id: str):
+    if session_id not in store:
+        store[session_id] = InMemoryChatMessageHistory()
+    return store[session_id]
+
+# Prompt with memory
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}")
+])
+
+# Chain with history
+chain = prompt | model
+chain_with_history = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history"
 )
-print("Chat History Initialized.")
-print("Current Chat History:", chat_history.messages)
-
-# Initialize Chat Model
-model = ChatGroq()
 
 print("Start chatting with the AI. Type 'exit' to quit.")
 
@@ -33,9 +40,8 @@ while True:
     if human_input.lower() == "exit":
         break
 
-    chat_history.add_user_message(human_input)
-
-    ai_response = model.invoke(chat_history.messages)
-    chat_history.add_ai_message(ai_response.content)
-
-    print(f"AI: {ai_response.content}")
+    response = chain_with_history.invoke(
+        {"input": human_input},
+        config={"configurable": {"session_id": "session1"}}
+    )
+    print(f"AI: {response.content}")
