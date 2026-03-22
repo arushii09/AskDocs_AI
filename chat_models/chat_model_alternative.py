@@ -5,8 +5,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 load_dotenv()
 
 messages=[
-    SystemMessage=("Solve the following problems"),
-    HumanMessage=("What is 81 divided by 9?"),
+    SystemMessage(content="Solve the following problems"),
+    HumanMessage(content="What is 81 divided by 9?"),
 ]
 
 #creating groq ai model
