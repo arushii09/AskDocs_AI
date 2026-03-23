@@ -1,0 +1,59 @@
+from dotenv import load_dotenv
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableParallel, RunnableLambda
+from langchain_groq import ChatGroq
+
+load_dotenv()
+model = ChatGroq(model="llama-3.1-8b-instant")
+
+prompt_template=ChatPromptTemplate.from_messages(
+    [
+        ("system", "You are an expert product reviewer."),
+        ("human", "List the main features of the product {product_name}."),
+    ]
+)
+
+def analyze_pros(features):
+    pros_template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an expert product reviewer."),
+            ("human", "Given these features: {features}, list the pros of these features."),
+        ]
+    )
+    return pros_template.format_prompt(features=features)
+
+#define cons analysis step
+def analyze_cons(features):
+    cons_template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an expert product reviewer."),
+            ("human", "Given these features: {features}, list the cons of these features."),
+        ]
+    )
+    return cons_template.format_prompt(features=features)
+
+#combine pros and cons
+def combine_pros_cons(pros, cons):
+    return f"Pros:\n{pros}\n\nCons:\n{cons}"
+
+#simplifying branches with LCEL
+pros_branch_chain = (
+    RunnableLambda(lambda x: analyze_pros(x)) | model | StrOutputParser()
+)
+
+cons_branch_chain =(
+    RunnableLambda(lambda x: analyze_cons(x)) | model | StrOutputParser()
+)
+
+#combined chain using LCEL
+chain = (
+    prompt_template
+    | model
+    | StrOutputParser()
+    | RunnableParallel(branches={"pros": pros_branch_chain, "cons": cons_branch_chain})
+    |RunnableLambda(lambda x: combine_pros_cons(x["branches"]["pros"], x["branches"]["cons"]))
+)
+
+result = chain.invoke({"product_name": "Macbook Pro"})
+print(result)
