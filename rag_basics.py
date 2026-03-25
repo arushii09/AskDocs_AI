@@ -1,12 +1,12 @@
 import os
-
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
 
 current_dir =os.path.dirname(os.path.abspath(__file__))
-file_path =os.path.join(current_dir, "books", "file.txt")
+file_path =os.path.join(current_dir, "books", "romeo_and_juliet.txt")
 persistent_directory = os.path.join(current_dir,"db", "cheoma_db")
 
 #if chorma vector store already exists
@@ -20,7 +20,7 @@ if not os.path.exists(persistent_directory):
     )
 
     #read text content from the file
-    loader =TextLoader(file_path)
+    loader = TextLoader(file_path, encoding="utf-8")
     documents=loader.load()
 
     #spilt the doc into chunks
@@ -34,9 +34,9 @@ if not os.path.exists(persistent_directory):
 
     #create embeddings
     print("\n--- Creating embeddings ---")
-    embeddings = GroqEmbeddings{
-        model="text-embedding-3-small"
-    }
+    embeddings = HuggingFaceEmbeddings(
+    model_name="all-MiniLM-L6-v2"
+)
     print("\n--- Finished creating embeddings ---")
 
     #creating vector store and persist it automatically
