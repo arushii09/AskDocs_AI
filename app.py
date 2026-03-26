@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 model = ChatGroq(model="llama-3.1-8b-instant")
 
-CHROMA_DIR = "chroma_dir"
+CHROMA_DIR = "chroma_db"
 def load_and_index_pdf(pdf_path):
     loader = PyPDFLoader(pdf_path)
     documents = loader.load()
@@ -26,7 +26,18 @@ def load_and_index_pdf(pdf_path):
     )
     chunks=splitter.split_documents(documents)
     print(f"Split into {len(chunks)} chunks")
-    return chunks
+    
+    print("Creating embeddings..")
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    print("Storing in ChromaDB..")
+    db =Chroma.from_documents(
+        chunks,
+        embeddings,
+        persist_directory=CHROMA_DIR,
+        collection_metadata={"hnsw:space":"cosine"}
+    )
+    print("Done storing!")
+    return db
 
 
 if __name__ =="__main__":
