@@ -54,5 +54,4 @@ Open your browser at `http://localhost:8501`
 - Chat history resets when you upload a new PDF
 - Large PDFs may take longer to index on first upload
 
-## 🧑‍💻 Author
-Built by Arushi as an AI Engineering project
+Built by Arushi 
