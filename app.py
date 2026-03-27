@@ -13,6 +13,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 model = ChatGroq(model="llama-3.1-8b-instant")
+st.set_page_config(
+    page_title="PDF Chatbot",
+    page_icon="📄",
+    layout="wide"  # makes it full width
+)
 
 store={}
 
@@ -49,7 +54,7 @@ def get_session_history(session_id):
 def get_answer(db, question, session_id="session1"):
     retriever = db.as_retriever(
         search_type="similarity",
-        search_kwargs={"k":3}
+        search_kwargs={"k":6}
     )
     relevant_docs = retriever.invoke(question)
     context="\n\n".join([doc.page_content for doc in relevant_docs])
@@ -78,7 +83,58 @@ def get_answer(db, question, session_id="session1"):
     )
     return response
 
-if __name__ =="__main__":
-    db = load_and_index_pdf("research_paper.pdf")
-    print(get_answer(db, "What is the main finding of this research?"))
-    print(get_answer(db, "can you elaborate on that?"))
+st.title("AskDocs AI")
+st.write("Upload a PDF and ask questions about it!")
+
+st.markdown("""
+    <style>
+    .stApp { background-color: #303030; }
+    .stChatMessage { border-radius: 10px; }
+    </style>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    st.header("Upload your PDF")
+    uploaded_file = st.file_uploader("Choose a file", type="pdf")
+if uploaded_file:
+    # save PDF temporarily
+    temp_path= f"temp_{uploaded_file.name}"
+    with open(temp_path, "wb") as f:
+        f.write(uploaded_file.read())
+
+    if "db" not in st.session_state:
+        with st.spinner("Reading and indexing your PDF..."):
+            st.session_state.db= load_and_index_pdf(temp_path)
+        st.success("PDF loaded! Ask your questions below.")
+
+        # store chat messages in session_state
+    if "messages" not in st.session_state:
+        st.session_state.messages= []
+
+    for message in st.session_state.messages:  # display previous messages
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+    # chat input box at bottom
+    if question:= st.chat_input("Ask something about your PDF-"):
+        # show user message immediately
+        st.session_state.messages.append({"role": "user", "content": question})
+        with st.chat_message("user"):
+            st.write(question)
+
+        # getting answer and show it
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                answer = get_answer(
+                    st.session_state.db, 
+                    question,
+                    "session1"
+                )
+            st.write(answer)
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": answer
+            })
+
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
