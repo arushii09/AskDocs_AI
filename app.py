@@ -12,11 +12,62 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from dotenv import load_dotenv
 
 load_dotenv()
-model = ChatGroq(model="llama-3.1-8b-instant")
+
 st.set_page_config(
-    page_title="PDF Chatbot",
-    page_icon="📄",
-    layout="wide"  # makes it full width
+    page_title="AskDocs AI",
+    page_icon="🤖",
+    layout="centered"  
+)
+st.markdown("""
+<style>
+    /* Hide sidebar completely */
+    [data-testid="stSidebar"] { display: none; }
+    
+    /* Clean dark background */
+    .stApp { background-color: #18181b; }
+    
+    /* File uploader */
+    [data-testid="stFileUploader"] {
+        background-color: #27272a;
+        border-radius: 12px;
+        border: 1.5px dashed #3f3f46;
+        padding: 8px;
+    }
+    
+    /* Chat input */
+    [data-testid="stChatInput"] textarea {
+        background-color: #27272a !important;
+        border-radius: 10px !important;
+        color: #d4d4d8 !important;
+    }
+
+    /* All text */
+    p, label, span, div { color: #d4d4d8; }
+
+    /* Success box */
+    .stAlert { 
+        background-color: #27272a; 
+        border: 0.5px solid #3f3f46;
+        border-radius: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="text-align: center; padding: 20px 0 16px;">
+    <h1 style="font-size: 22px; font-weight: 500; color: #f4f4f5; margin: 0 0 8px;">
+        AskDocs AI — Document Retrieval & Question Answering System
+    </h1>
+    <p style="font-size: 13px; color: #71717a; margin: 0;">
+        Ask questions and get precise, context-aware answers grounded in your document.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+uploaded_file = st.file_uploader(
+    "Upload your PDF",
+    type="pdf",
+    label_visibility="collapsed"
 )
 
 store={}
@@ -83,19 +134,7 @@ def get_answer(db, question, session_id="session1"):
     )
     return response
 
-st.title("AskDocs AI")
-st.write("Upload a PDF and ask questions about it!")
 
-st.markdown("""
-    <style>
-    .stApp { background-color: #303030; }
-    .stChatMessage { border-radius: 10px; }
-    </style>
-""", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.header("Upload your PDF")
-    uploaded_file = st.file_uploader("Choose a file", type="pdf")
 if uploaded_file:
     # save PDF temporarily
     temp_path= f"temp_{uploaded_file.name}"
@@ -116,7 +155,7 @@ if uploaded_file:
             st.write(message["content"])
 
     # chat input box at bottom
-    if question:= st.chat_input("Ask something about your PDF-"):
+    if question:= st.chat_input("Ask a question about your document…"):
         # show user message immediately
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user"):
@@ -138,3 +177,9 @@ if uploaded_file:
 
     if os.path.exists(temp_path):
         os.remove(temp_path)
+else:
+    st.markdown("""
+    <div style="text-align: center; padding: 40px 0; color: #71717a;">
+        <p style="font-size: 13px;">Start by uploading your PDF to explore its contents. </p>
+    </div>
+    """, unsafe_allow_html=True)
