@@ -54,8 +54,5 @@ Open your browser at `http://localhost:8501`
 - Chat history resets when you upload a new PDF
 - Large PDFs may take longer to index on first upload
 
-## 🔗 Live Demo
-[Try it here](https://askdocs-ai-rag.streamlit.app/)
-
 
 Built by Arushi 
