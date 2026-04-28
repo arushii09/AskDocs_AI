@@ -55,4 +55,7 @@ Open your browser at `http://localhost:8501`
 - Large PDFs may take longer to index on first upload
 
 
-Built by Arushi 
+## Built by
+
+— Arushi 
+
